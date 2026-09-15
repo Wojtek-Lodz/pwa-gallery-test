@@ -1,0 +1,33 @@
+name: Deploy to Hostinger (FTP)
+
+# Wdrożenie uruchamia się automatycznie po każdym pushu do main.
+# Wymaga skonfigurowania sekretów repozytorium (Settings -> Secrets and variables -> Actions):
+#   FTP_SERVER    - adres serwera FTP z hPanel (np. ftp.twojadomena.pl)
+#   FTP_USERNAME  - login FTP z hPanel
+#   FTP_PASSWORD  - hasło FTP z hPanel
+#   FTP_TARGET_DIR- katalog docelowy, np. /public_html/ lub /public_html/galeria/
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_TARGET_DIR }}
+          local-dir: ./
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**

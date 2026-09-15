@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PWA Galeria Testowa</title>
+<meta name="description" content="Testowa jednostronicowa aplikacja PWA wyświetlająca grafiki, gotowa do wdrożenia na Hostinger.">
+<meta name="theme-color" content="#4f46e5">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  :root{
+    --bg:#0f1117; --panel:#171a23; --panel2:#1f2330; --text:#f2f3f7; --muted:#9aa0ae;
+    --accent1:#4f46e5; --accent2:#ec4899; --border:#2a2f3d; --ok:#22c55e; --warn:#f59e0b;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f5f6fa; --panel:#ffffff; --panel2:#f0f1f6; --text:#14161f; --muted:#5b6172; --border:#e2e4ec; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  header{padding:20px 16px 8px;max-width:1000px;margin:0 auto;}
+  h1{font-size:1.5rem;margin:0 0 4px;background:linear-gradient(90deg,var(--accent1),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;}
+  .sub{color:var(--muted);font-size:.9rem;margin:0 0 14px;}
+  .status{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.8rem;margin-bottom:8px;}
+  .badge{border:1px solid var(--border);background:var(--panel);border-radius:999px;padding:4px 10px;
+    display:flex;align-items:center;gap:6px;color:var(--muted);}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
+  .dot.online{background:var(--ok);} .dot.offline{background:var(--warn);}
+  #installBtn{border:1px solid var(--accent1);background:var(--accent1);color:#fff;border-radius:999px;
+    padding:6px 14px;font-size:.8rem;cursor:pointer;display:none;}
+  #installBtn:hover{filter:brightness(1.1);}
+  main{max-width:1000px;margin:0 auto;padding:0 16px 40px;}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .toolbar button{border:1px solid var(--border);background:var(--panel);color:var(--text);
+    border-radius:8px;padding:6px 12px;font-size:.85rem;cursor:pointer;}
+  .toolbar button.active{background:var(--accent1);border-color:var(--accent1);color:#fff;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+  figure{margin:0;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;
+    cursor:pointer;transition:transform .15s ease;}
+  figure:hover{transform:translateY(-2px);}
+  figure img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;background:var(--panel2);}
+  figcaption{padding:8px 10px;font-size:.78rem;color:var(--muted);display:flex;justify-content:space-between;gap:6px;}
+  figcaption b{color:var(--text);font-weight:600;}
+  .empty{color:var(--muted);text-align:center;padding:40px 0;}
+  dialog{border:none;border-radius:14px;padding:0;background:var(--panel);color:var(--text);max-width:min(90vw,700px);}
+  dialog::backdrop{background:rgba(0,0,0,.6);}
+  dialog img{width:100%;display:block;max-height:70vh;object-fit:contain;background:var(--panel2);}
+  .dlg-body{padding:14px 16px;}
+  .dlg-body h3{margin:0 0 4px;}
+  .dlg-body p{margin:0;color:var(--muted);font-size:.85rem;}
+  .dlg-close{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--text);
+    font-size:1.3rem;cursor:pointer;}
+  footer{max-width:1000px;margin:0 auto;padding:0 16px 30px;color:var(--muted);font-size:.75rem;}
+  .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--panel);
+    border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:10px;font-size:.85rem;
+    box-shadow:0 6px 20px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:50;}
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<header>
+  <h1>PWA Galeria Testowa</h1>
+  <p class="sub">Jednostronicowa aplikacja do testów instalacji PWA i wyświetlania grafik, wdrażana z GitHub na Hostinger.</p>
+  <div class="status">
+    <span class="badge"><span class="dot" id="netDot"></span><span id="netText">sprawdzanie…</span></span>
+    <span class="badge" id="swBadge"><span class="dot" id="swDot"></span><span id="swText">Service Worker: —</span></span>
+    <button id="installBtn">📲 Zainstaluj aplikację</button>
+  </div>
+</header>
+
+<main>
+  <div class="toolbar" id="filters"></div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>
+  Grafiki generowane lokalnie (SVG) — działają w 100% offline po pierwszym załadowaniu i instalacji.
+</footer>
+
+<dialog id="viewer">
+  <button class="dlg-close" id="closeDlg" aria-label="Zamknij">✕</button>
+  <img id="viewerImg" alt="">
+  <div class="dlg-body">
+    <h3 id="viewerTitle"></h3>
+    <p id="viewerDesc"></p>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script src="images.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
