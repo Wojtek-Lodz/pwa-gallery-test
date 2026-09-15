@@ -1,5 +1,5 @@
 // Prosty Service Worker: cache-first dla powłoki aplikacji, umożliwia pracę offline.
-const CACHE_NAME = "pwa-gallery-v1";
+const CACHE_NAME = "pwa-gallery-v4";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -12,8 +12,20 @@ const APP_SHELL = [
 ];
 
 self.addEventListener("install", (event) => {
+  // fetch(..., {cache: "reload"}) omija zwykły cache HTTP przeglądarki,
+  // dzięki czemu każda instalacja zawsze pobiera świeże pliki z serwera —
+  // użytkownik nie musi ręcznie robić twardego odświeżenia (Ctrl+Shift+R).
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
+    caches
+      .open(CACHE_NAME)
+      .then((cache) =>
+        Promise.all(
+          APP_SHELL.map((url) =>
+            fetch(url, { cache: "reload" }).then((response) => cache.put(url, response))
+          )
+        )
+      )
+      .then(() => self.skipWaiting())
   );
 });
 

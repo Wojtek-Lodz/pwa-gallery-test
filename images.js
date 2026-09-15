@@ -19,7 +19,7 @@ const GALLERY = [
     title: "Gradient — Zachód słońca",
     category: "Abstrakcja",
     desc: "Prosty gradient liniowy testujący renderowanie kolorów.",
-    src: svg(400, 400, `<defs>${gradientDef("g1", "#f97316", "#ec4899", 60)}</defs>
+    src: svg(400, 400, `<defs>${gradientDef("g1", "#10b981", "#3b82f6", 60)}</defs>
       <rect width="400" height="400" fill="url(#g1)"/>`),
   },
   {
